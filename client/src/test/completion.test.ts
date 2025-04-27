@@ -1,43 +1,42 @@
 /* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
+ * diagnostics.test.ts: Tests that we get certain diagnostics for a .txt or parasail file.
  * ------------------------------------------------------------------------------------------ */
 
 import * as vscode from 'vscode';
 import * as assert from 'assert';
+// CHANGED: import from updated helper, referencing the correct extension
 import { getDocUri, activate } from './helper';
 
-suite('Should do completion', () => {
-	const docUri = getDocUri('completion.txt');
+suite('Should get diagnostics', () => {
+  const docUri = getDocUri('diagnostics.txt');
 
-	test('Completes JS/TS in txt file', async () => {
-		await testCompletion(docUri, new vscode.Position(0, 0), {
-			items: [
-				{ label: 'JavaScript', kind: vscode.CompletionItemKind.Text },
-				{ label: 'TypeScript', kind: vscode.CompletionItemKind.Text }
-			]
-		});
-	});
+  test('Diagnoses uppercase texts', async () => {
+    await activate(docUri);
+
+    // In this hypothetical scenario, we expect these warnings on uppercase
+    const expectedDiagnostics = [
+      { message: 'ANY is all uppercase.', range: toRange(0, 0, 0, 3), severity: vscode.DiagnosticSeverity.Warning, source: 'ex' },
+      { message: 'ANY is all uppercase.', range: toRange(0, 14, 0, 17), severity: vscode.DiagnosticSeverity.Warning, source: 'ex' },
+      { message: 'OS is all uppercase.', range: toRange(0, 18, 0, 20), severity: vscode.DiagnosticSeverity.Warning, source: 'ex' }
+    ];
+
+    // We retrieve actual diagnostics from the doc
+    const actualDiagnostics = vscode.languages.getDiagnostics(docUri);
+    assert.equal(actualDiagnostics.length, expectedDiagnostics.length);
+
+    // Check each
+    expectedDiagnostics.forEach((expDiag, i) => {
+      const actualDiag = actualDiagnostics[i];
+      assert.equal(actualDiag.message, expDiag.message);
+      assert.deepEqual(actualDiag.range, expDiag.range);
+      assert.equal(actualDiag.severity, expDiag.severity);
+    });
+  });
 });
 
-async function testCompletion(
-	docUri: vscode.Uri,
-	position: vscode.Position,
-	expectedCompletionList: vscode.CompletionList
-) {
-	await activate(docUri);
-
-	// Executing the command `vscode.executeCompletionItemProvider` to simulate triggering completion
-	const actualCompletionList = (await vscode.commands.executeCommand(
-		'vscode.executeCompletionItemProvider',
-		docUri,
-		position
-	)) as vscode.CompletionList;
-
-	assert.ok(actualCompletionList.items.length >= 2);
-	expectedCompletionList.items.forEach((expectedItem, i) => {
-		const actualItem = actualCompletionList.items[i];
-		assert.equal(actualItem.label, expectedItem.label);
-		assert.equal(actualItem.kind, expectedItem.kind);
-	});
+function toRange(sLine: number, sChar: number, eLine: number, eChar: number) {
+  return new vscode.Range(
+    new vscode.Position(sLine, sChar),
+    new vscode.Position(eLine, eChar)
+  );
 }

@@ -1,6 +1,6 @@
 [submodule "parasail-ls"]
 	path = parasail-ls
-	url = https://github.com/parasail-lang/parasail-ls
+	url = https://github.com/SWENG480/parasail-ls
 [submodule "parasail-tm"]
 	path = parasail-tm
 	url = https://github.com/parasail-lang/parasail-tm
